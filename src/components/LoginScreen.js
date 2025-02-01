@@ -6,11 +6,10 @@ import axios from "axios";
 import backgroundImage from "./windows10.jpg";
 
 const LoginScreen = ({ onLogin }) => {
-  const [showLogin, setShowLogin] = useState(false);
   const [time, setTime] = useState(new Date());
-  const [showPassword, setShowPassword] = useState(false);
-  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [showLogin, setShowLogin] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -36,7 +35,7 @@ const LoginScreen = ({ onLogin }) => {
   }, [showLogin]);
 
   const handleSubmit = async (e) => {
-    e?.preventDefault();
+    e.preventDefault();
     setIsLoading(true);
     setError("");
 
@@ -45,19 +44,20 @@ const LoginScreen = ({ onLogin }) => {
       const response = await axios.post(
         "http://localhost:8000/api/auth/login/",
         {
-          username,
+          username: selectedUser?.name,
           password,
         }
       );
 
-      // If login is successful, call the onLogin callback with the token
+      // If login is successful, pass the token to the parent component
       if (response.data.token) {
+        onLogin(response.data.token);
+        setPassword("");
         setError("");
-        onLogin(response.data.token); // Pass the token to the parent component
       }
     } catch (error) {
       // Handle login errors
-      console.error("Login error:", error);
+      console.log(error);
       setError("Invalid username or password. Please try again.");
     } finally {
       setIsLoading(false);
@@ -108,50 +108,23 @@ const LoginScreen = ({ onLogin }) => {
           <div className='w-32 h-32 rounded-full bg-gradient-to-b from-gray-100 to-gray-300 shadow-lg flex items-center justify-center'>
             <User size={64} className='text-gray-600' />
           </div>
-          <h1 className='text-white text-2xl font-light'>Welcome</h1>
+          <h1 className='text-white text-2xl font-light'>
+            {selectedUser ? selectedUser.name : "Select User"}
+          </h1>
 
-          {/* Sign in button or password input */}
+          {/* PIN Input */}
           <div className='w-80'>
-            {showPassword ? (
-              <form onSubmit={handleSubmit} className='space-y-4'>
-                {/* Username Input */}
-                <input
-                  type='text'
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className='w-full bg-white/10 backdrop-blur text-white px-4 py-3 rounded-lg outline-none focus:ring-2 focus:ring-white/30'
-                  placeholder='Enter Username'
-                  autoFocus
-                />
-                {/* Password Input */}
-                <input
-                  type='password'
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className='w-full bg-white/10 backdrop-blur text-white px-4 py-3 rounded-lg outline-none focus:ring-2 focus:ring-white/30'
-                  placeholder='Enter Password'
-                />
-                {/* Error Message */}
-                {error && (
-                  <div className='text-red-400 text-sm mt-2'>{error}</div>
-                )}
-                {/* Submit Button */}
-                <button
-                  type='submit'
-                  disabled={isLoading}
-                  className='w-full bg-white/10 hover:bg-white/20 text-white py-3 rounded-lg backdrop-blur-sm transition-colors'
-                >
-                  {isLoading ? "Signing in..." : "Sign in"}
-                </button>
-              </form>
-            ) : (
-              <button
-                onClick={() => setShowPassword(true)}
-                className='w-full bg-white/10 hover:bg-white/20 text-white py-3 rounded-lg backdrop-blur-sm transition-colors'
-              >
-                Sign in
-              </button>
-            )}
+            <form onSubmit={handleSubmit} className='space-y-4'>
+              <input
+                type='password'
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className='w-full bg-white/10 backdrop-blur text-white px-4 py-3 rounded-lg outline-none focus:ring-2 focus:ring-white/30'
+                placeholder='Enter PIN'
+                autoFocus
+              />
+              {error && <div className='text-red-400 text-sm'>{error}</div>}
+            </form>
           </div>
         </div>
       </div>
@@ -161,6 +134,26 @@ const LoginScreen = ({ onLogin }) => {
         <div className='max-w-screen-xl mx-auto h-full px-6 flex justify-between items-center'>
           {showLogin ? (
             <>
+              {/* User List - Displayed Vertically, Scrollable */}
+              <div className='flex flex-col items-start space-y-2 overflow-y-auto max-h-40'>
+                {["hp_123", "User2"].map((user) => (
+                  <button
+                    key={user}
+                    onClick={() => setSelectedUser({ name: user })}
+                    className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
+                      selectedUser?.name === user
+                        ? "bg-white/10"
+                        : "hover:bg-white/5"
+                    }`}
+                  >
+                    <div className='w-8 h-8 rounded-full bg-gradient-to-b from-gray-100 to-gray-300 flex items-center justify-center'>
+                      <User size={16} className='text-gray-600' />
+                    </div>
+                    <span className='text-white text-sm'>{user}</span>
+                  </button>
+                ))}
+              </div>
+
               {/* System Icons */}
               <div className='flex items-center space-x-6'>
                 <button className='p-2 rounded-full hover:bg-white/10 transition-colors'>
